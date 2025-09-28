@@ -1,8 +1,13 @@
+import { mockDrive } from "../data/mockData";
+import FileList from "../components/FileList";
+
 export default function Drive({ user }) {
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Welcome {user.name}</h1>
-      <p>This is your online drive.</p>
+    <div style={{ padding: "20px" }}>
+      <h2>Xin chào, {user?.name} 👋</h2>
+      <p>Đây là Drive mock data </p>
+
+      <FileList files={mockDrive} />
     </div>
   );
 }
