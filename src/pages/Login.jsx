@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { mockUsers } from "../data/mockData";
 
 export default function Login({ setUser }) {
   const [username, setUsername] = useState("");
@@ -9,8 +10,13 @@ export default function Login({ setUser }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username === "test" && password === "123") {
-      setUser({ name: username });
+
+    const foundUser = mockUsers.find(
+      (u) => u.username === username && u.password === password
+    );
+
+    if (foundUser) {
+      setUser(foundUser);
       navigate("/drive");
     } else {
       setError("Sai tên đăng nhập hoặc mật khẩu!");
@@ -18,8 +24,11 @@ export default function Login({ setUser }) {
   };
 
   const handleQuickLogin = () => {
-    setUser({ name: "test" });
-    navigate("/drive");
+    const testUser = mockUsers.find((u) => u.username === "test");
+    if (testUser) {
+      setUser(testUser);
+      navigate("/drive");
+    }
   };
 
   return (
