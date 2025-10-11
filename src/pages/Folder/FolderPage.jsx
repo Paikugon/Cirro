@@ -1,4 +1,3 @@
-// File: src/pages/Folder/FolderPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Breadcrumb, message, Typography } from "antd";
@@ -49,21 +48,54 @@ export default function FolderPage() {
   };
 
   const convertToTree = (folders) =>
-    folders.map((f) => ({
-      title: (
+  folders.map((f) => ({
+    title: (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        {/* Cột Tên folder */}
         <Text
           strong
-          style={{ cursor: "pointer" }}
+          style={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 18,
+          }}
           onClick={() => navigate(`/folder/${f.folderId}`)}
         >
-          <FolderFilled style={{ color: "#faad14", marginRight: 8 }} />
+          <FolderFilled
+            style={{
+              color: "#faad14",
+              fontSize: 20,
+              marginRight: 8,
+              marginBottom: 4,
+            }}
+          />
           {f.name}
         </Text>
-      ),
-      key: f.folderId,
-      children:
-        f.children && f.children.length > 0 ? convertToTree(f.children) : undefined,
-    }));
+
+        {/* Cột Ngày tạo */}
+        <Text type="secondary" style={{ fontSize: 14 }}>
+          {f.createdAt
+            ? new Date(f.createdAt).toLocaleDateString("vi-VN")
+            : "—"}
+        </Text>
+      </div>
+    ),
+    key: f.folderId,
+    children:
+      f.children && f.children.length > 0
+        ? convertToTree(f.children)
+        : undefined,
+  }));
+
 
   const buildBreadcrumb = (ids, folder) => {
     const crumbs = [{ id: null, name: "Tất cả tệp" }];

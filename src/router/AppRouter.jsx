@@ -5,6 +5,7 @@ import HomePage from "../pages/Home/HomePage";
 import Dashboard from "../pages/Home/Dashboard";
 import FolderPage from "../pages/Folder/FolderPage";
 import DetailsFolderPage from "../pages/Folder/DetailsFolderPage";
+import UserPermissionPage from "../pages/Permission/UserPermissionPage";
 
 export default function AppRouter() {
   return (
@@ -15,6 +16,8 @@ export default function AppRouter() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/folder/*" element={<FolderPage />} />
         <Route path="/folder/:id" element={<DetailsFolderPage />} />
+        <Route path="/permission/shared" element={<UserPermissionPage />} />
+
       </Route>
     </Routes>
   );

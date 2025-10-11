@@ -36,7 +36,6 @@ export default function DetailsFolderPage() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🟢 Gọi API Folder + File
   useEffect(() => {
     const loadFolderContent = async () => {
       if (!id) {
@@ -46,7 +45,6 @@ export default function DetailsFolderPage() {
       }
 
       try {
-        // Gọi API lấy thông tin folder (tên + subFolders)
         const resFolder = await getFolderContent(id);
         if (resFolder.data.statusCode === 200) {
           const data = resFolder.data.data || {};
@@ -56,12 +54,10 @@ export default function DetailsFolderPage() {
           message.error(resFolder.data.message || "Lỗi khi tải nội dung thư mục!");
         }
 
-        // Gọi API lấy danh sách file trong folder
         const resFiles = await getFilesByFolder(id);
         if (resFiles.data.statusCode === 200) {
           setFiles(resFiles.data.data || []);
         } else if (resFiles.status !== 404) {
-          // 404 = folder không có file
           message.warning(resFiles.data.message || "Không có tệp trong thư mục này.");
         }
       } catch (err) {
@@ -79,7 +75,6 @@ export default function DetailsFolderPage() {
     navigate(`/folder/${folderId}`);
   };
 
-  // 🟡 Thao tác file
   const handleView = (file) => {
     window.open(file.filePath, "_blank");
   };
@@ -99,7 +94,6 @@ export default function DetailsFolderPage() {
     }
   };
 
-  // 🧱 Cột Table hiển thị file
   const columns = [
     {
       title: "Tên tệp",
@@ -160,7 +154,7 @@ export default function DetailsFolderPage() {
   if (!folderData) return <div>Không tìm thấy dữ liệu thư mục!</div>;
 
   return (
-    <div style={{ padding: 24, background: "#fff", borderRadius: 8 }}>
+    <div style={{ padding: 12, background: "#fff", borderRadius: 8  }}>
       <Breadcrumb
         style={{ marginBottom: 16 }}
         items={[
@@ -180,46 +174,72 @@ export default function DetailsFolderPage() {
         ]}
       />
 
-      {/* --- SubFolders --- */}
-      {folderData.subFolders?.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <Text strong style={{ fontSize: 16 }}>Thư mục</Text>
-          <List
-            grid={{ gutter: 16, column: 8 }}
-            dataSource={folderData.subFolders}
-            renderItem={(folder) => (
-              <List.Item>
-                <Card
-                  hoverable
-                  onClick={() => handleFolderClick(folder.folderId)}
+
+     {/* --- SubFolders --- */}
+    {folderData.subFolders?.length > 0 && (
+      <div style={{ marginBottom: 24 }}>
+        <Text strong style={{ fontSize: 16 }}>Thư mục</Text>
+
+        <List
+          grid={{ gutter: 16, column: 8 }}
+          dataSource={folderData.subFolders}
+          renderItem={(folder) => (
+            <List.Item>
+              <Card
+                hoverable
+                onClick={() => handleFolderClick(folder.folderId)}
+                style={{
+                  textAlign: "center",
+                  height: 90,
+                  padding: "8px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginTop: 8,
+                }}
+              >
+                {/* Hàng 1: icon + tên */}
+                <div
                   style={{
-                    textAlign: "center",
-                    height: 80,
-                    padding: "4px 0",
                     display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
                     alignItems: "center",
-                    marginTop: 8,
+                    justifyContent: "center",
+                    gap: 6,
+                    marginBottom: 10,
+                    marginTop: 10,
                   }}
                 >
-                  <FolderFilled style={{ fontSize: 24, color: "#faad14" }} />
+                  <FolderFilled style={{ fontSize: 22, color: "#faad14" ,marginRight:4}} />
                   <Text
+                    strong
                     style={{
-                      display: "block",
-                      marginTop: 6,
-                      fontSize: 13,
+                      fontSize: 14,
                       wordWrap: "break-word",
+                      maxWidth: "100px",
                     }}
                   >
                     {folder.name || "Thư mục không tên"}
                   </Text>
-                </Card>
-              </List.Item>
-            )}
-          />
-        </div>
-      )}
+                </div>
+                {/* Hàng 2: Ngày tạo */}
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: 12,
+                  }}
+                >
+                  {folder.createdAt
+                    ? new Date(folder.createdAt).toLocaleDateString("vi-VN")
+                    : "—"}
+                </Text>
+              </Card>
+            </List.Item>
+          )}
+        />
+      </div>
+    )}
+
 
       {/* --- Files --- */}
       {files.length > 0 && (

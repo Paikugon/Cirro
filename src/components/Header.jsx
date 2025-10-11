@@ -22,7 +22,7 @@ const Header = () => {
       <Input
         placeholder="Search"
         prefix={<SearchOutlined />}
-        style={{ width: 1000, borderRadius: "4px" , marginRight: "16px"}}
+        style={{ width: 800, borderRadius: "4px" , marginRight: "16px"}}
       />
 
       {/* Right Section */}

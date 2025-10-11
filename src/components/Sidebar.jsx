@@ -1,105 +1,93 @@
 import React from "react";
-import { Layout, Menu, Badge } from "antd";
+import { Layout, Menu } from "antd";
 import {
   HomeOutlined,
-  FolderOpenOutlined,
-  BellOutlined,
-  AppstoreOutlined,
-  DesktopOutlined,
+  DashboardOutlined,
+  FolderOutlined,
+  ShareAltOutlined,
+  TeamOutlined,
   QuestionCircleOutlined,
 } from "@ant-design/icons";
+import logo from "../assets/images/logo.jpg";
+import { Link, useLocation } from "react-router-dom";
 
 const { Sider } = Layout;
 
+const items = [
+  { key: "1", icon: <HomeOutlined />, label: <Link to="/">Trang chủ</Link>, to: "/" },
+  { key: "2", icon: <DashboardOutlined />, label: <Link to="/dashboard">DashBoard</Link>, to: "/dashboard" },
+  { key: "3", icon: <FolderOutlined />, label: <Link to="/folder">Folder</Link>, to: "/folder" },
+  { key: "4", icon: <ShareAltOutlined />, label: <Link to="/share">Quản lý Share</Link>, to: "/share" },
+  { key: "5", icon: <TeamOutlined />, label: <Link to="/permission/shared">Được Share</Link>, to: "/permission/shared" },
+  { key: "6", icon: <QuestionCircleOutlined />, label: <Link to="/help">Trợ giúp</Link>, to: "/help" },
+];
+
 const Sidebar = () => {
+  const location = useLocation();
+
   return (
     <Sider
-      width={80}
+      width={290}
       style={{
         height: "100vh",
-        position: "fixed",
-        left: 0,
-        top: 0,
-        background: "#f9f7f4",
+        background: "#fff",
         borderRight: "1px solid #eee",
+        display: "flex",
+        flexDirection: "column",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 100,
       }}
     >
-      {/* Logo placeholder */}
+      {/* Logo */}
       <div
         style={{
           height: 64,
+          boxShadow: "0 1px 4px rgba(0, 21, 41, 0.08)",
+          borderBottom: "1px solid #e8e8e8",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          background: "#fff",
         }}
       >
-        <div
+        <img
+          src={logo}
+          alt="Logo"
           style={{
-            width: 28,
-            height: 28,
-            background: "black",
-            borderRadius: 4,
+            height: 40,
+            objectFit: "contain",
           }}
         />
       </div>
 
-      {/* Menu items */}
-      <Menu
-        mode="inline"
-        defaultSelectedKeys={["home"]}
-        style={{
-          background: "transparent",
-          border: "none",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 16,
-          marginTop: 12,
-        }}
-        items={[
-          {
-            key: "home",
-            icon: <HomeOutlined style={{ fontSize: 20 }} />,
-            label: "Home",
-          },
-          {
-            key: "folders",
-            icon: <FolderOpenOutlined style={{ fontSize: 20 }} />,
-            label: "Folders",
-          },
-          {
-            key: "activity",
-            icon: (
-              <Badge count={4} size="small" color="#c01b47">
-                <BellOutlined style={{ fontSize: 20 }} />
-              </Badge>
-            ),
-            label: "Activity",
-          },
-          {
-            key: "more",
-            icon: <AppstoreOutlined style={{ fontSize: 20 }} />,
-            label: "More",
-          },
-        ]}
-      />
-
-      {/* Bottom section */}
+      {/* Menu */}
       <div
         style={{
-          position: "absolute",
-          bottom: 20,
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 20,
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "8px 0",
         }}
       >
-        <DesktopOutlined style={{ fontSize: 20, color: "#6e6e6e" }} />
-        <Badge dot color="#c01b47">
-          <QuestionCircleOutlined style={{ fontSize: 20, color: "#6e6e6e" }} />
-        </Badge>
+        <Menu
+          theme="light"
+          mode="inline"
+          selectedKeys={
+            location.pathname === "/"
+              ? ["1"]
+              : [
+                  items.find(
+                    (item) =>
+                      item.to === location.pathname ||
+                      item.children?.find((child) => child.to === location.pathname)
+                  )?.key,
+                ]
+          }
+          items={items}
+          style={{ borderRight: 0 }}
+        />
       </div>
     </Sider>
   );

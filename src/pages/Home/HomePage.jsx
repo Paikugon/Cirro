@@ -1,8 +1,12 @@
-// src/pages/Home/HomePage.jsx
 import React from "react";
 
-const HomePage = () => {
-  return <h1>Welcome Home!</h1>;
+const Home = () => {
+  return (
+    <div className="text-center py-10 width-full">
+      <h1 className="text-4xl font-bold text-gray-800">Chào mừng về nhà!</h1>
+      <p className="mt-4 text-gray-600">Đây là trang chủ của bạn. Hãy bắt đầu khám phá!</p>
+    </div>
+  );
 };
 
-export default HomePage;
+export default Home;
