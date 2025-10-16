@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Button, Avatar } from "antd";
+import { Input, Button, Avatar ,Layout} from "antd";
 import { SearchOutlined, UserOutlined } from "@ant-design/icons";
 
 const Header = () => {
@@ -22,7 +22,7 @@ const Header = () => {
       <Input
         placeholder="Search"
         prefix={<SearchOutlined />}
-        style={{ width: 800, borderRadius: "4px" , marginRight: "16px"}}
+        style={{ borderRadius: "4px" , marginRight: "16px"}}
       />
 
       {/* Right Section */}

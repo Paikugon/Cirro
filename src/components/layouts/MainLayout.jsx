@@ -1,49 +1,55 @@
-import React, { useState } from "react";
+import React from "react";
 import { Outlet } from "react-router-dom";
+import { Layout } from "antd";
 import Sidebar from "../Sidebar";
 import Header from "../Header";
 
+const { Sider, Content } = Layout;
+
 const MainLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const handleToggleSidebar = (collapsed) => {
-    setSidebarCollapsed(collapsed);
-  };
-
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        width: "100%",
-        overflowX: "hidden",
-      }}
-    >
-      {/* Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggle={handleToggleSidebar} />
-
-      {/* Main Content */}
-      <div
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* Sidebar bên trái */}
+      <Sider
+        width={300}
         style={{
-          flex: 1,
-          marginLeft: sidebarCollapsed ? "80px" : "290px",
-          display: "flex",
-          flexDirection: "column",
-          transition: "margin-left 0.2s ease",
-          width: "100%",
+          background: "#fff",
+          borderRight: "1px solid #f0f0f0",
         }}
       >
-        <Header />
-        <div
+        <Sidebar />
+      </Sider>
+
+      {/* Khu vực bên phải */}
+      <Layout style={{ flex: 1, minWidth: "1200px", width: "calc(100% - 300px)" }}>
+        {/* Header phía trên */}
+        <Layout.Header
           style={{
-            padding: "2px 4px", 
-            flex: 1,
+            background: "#fff",
+            padding: 0,
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <Header />
+        </Layout.Header>
+
+        {/* Nội dung chính */}
+        <Content
+          style={{
+            margin: "16px",
+            padding: "16px",
+            background: "#f9fafb",
+            minHeight: "calc(100vh - 64px)", // trừ chiều cao Header
+            overflowY: "auto",
           }}
         >
           <Outlet />
-        </div>
-      </div>
-    </div>
+        </Content>
+      </Layout>
+    </Layout>
   );
 };
 

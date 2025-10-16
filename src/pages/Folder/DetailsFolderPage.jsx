@@ -11,6 +11,7 @@ import {
   Popconfirm,
   message,
   Tooltip,
+  Dropdown,
 } from "antd";
 import {
   FolderFilled,
@@ -18,6 +19,9 @@ import {
   EyeOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  EllipsisOutlined,
+  EditOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 
 import { getFolderContent } from "../../api/folderApi";
@@ -94,6 +98,69 @@ export default function DetailsFolderPage() {
     }
   };
 
+  const handleMenuAction = (key, item, type) => {
+    if (type === "folder") {
+      switch (key) {
+        case "download":
+          message.info("Tải xuống thư mục: " + item.name);
+          // Thêm logic tải xuống thư mục (nếu có API)
+          break;
+        case "rename":
+          message.info("Đổi tên thư mục: " + item.name);
+          // Thêm logic đổi tên thư mục
+          break;
+        case "share_link":
+          message.info("Tạo liên kết chia sẻ cho thư mục: " + item.name);
+          // Thêm logic chia sẻ liên kết
+          break;
+        case "share_user":
+          message.info("Chia sẻ thư mục với người dùng: " + item.name);
+          // Thêm logic chia sẻ với người dùng
+          break;
+        case "info":
+          message.info("Thông tin thư mục: " + item.name);
+          // Thêm logic hiển thị thông tin
+          break;
+        case "delete":
+          message.info("Xóa thư mục: " + item.name);
+          // Thêm logic xóa thư mục (cần API mới)
+          break;
+        default:
+          break;
+      }
+    } else if (type === "file") {
+      switch (key) {
+        case "view":
+          handleView(item);
+          break;
+        case "download":
+          downloadFile(item.fileId);
+          break;
+        case "rename":
+          message.info("Đổi tên tệp: " + item.name);
+          // Thêm logic đổi tên tệp
+          break;
+        case "share_link":
+          message.info("Tạo liên kết chia sẻ cho tệp: " + item.name);
+          // Thêm logic chia sẻ liên kết
+          break;
+        case "share_user":
+          message.info("Chia sẻ tệp với người dùng: " + item.name);
+          // Thêm logic chia sẻ với người dùng
+          break;
+        case "info":
+          message.info("Thông tin tệp: " + item.name);
+          // Thêm logic hiển thị thông tin
+          break;
+        case "delete":
+          handleDelete(item);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
   const columns = [
     {
       title: "Tên tệp",
@@ -126,26 +193,42 @@ export default function DetailsFolderPage() {
       title: "Thao tác",
       key: "actions",
       align: "center",
-      width: 180,
+      width: 100,
       render: (_, file) => (
-        <Space>
-          <Tooltip title="Xem tệp">
-            <Button icon={<EyeOutlined />} onClick={() => handleView(file)} />
-          </Tooltip>
-          <Tooltip title="Tải xuống">
-            <Button icon={<DownloadOutlined />} onClick={() => downloadFile(file.fileId)} />
-          </Tooltip>
-          <Tooltip title="Xoá tệp">
-            <Popconfirm
-              title="Xoá tệp?"
-              okText="Xoá"
-              cancelText="Huỷ"
-              onConfirm={() => handleDelete(file)}
-            >
-              <Button danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
+        <Dropdown
+          trigger={["click"]}
+          menu={{
+            items: [
+              { key: "view", label: "Xem tệp", icon: <EyeOutlined /> },
+              { key: "download", label: "Tải xuống", icon: <DownloadOutlined /> },
+              { key: "rename", label: "Đổi tên", icon: <EditOutlined /> },
+              { type: "divider" },
+              {
+                key: "share",
+                label: "Chia sẻ",
+                children: [
+                  { key: "share_link", label: "Tạo liên kết chia sẻ" },
+                  { key: "share_user", label: "Chia sẻ với người dùng..." },
+                ],
+              },
+              { key: "info", label: "Thông tin về tệp", icon: <InfoCircleOutlined /> },
+              { type: "divider" },
+              {
+                key: "delete",
+                label: "Xóa",
+                icon: <DeleteOutlined />,
+                danger: true,
+              },
+            ],
+            onClick: (e) => handleMenuAction(e.key, file, "file"),
+          }}
+        >
+          <Button
+            type="text"
+            icon={<EllipsisOutlined />}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Dropdown>
       ),
     },
   ];
@@ -154,7 +237,7 @@ export default function DetailsFolderPage() {
   if (!folderData) return <div>Không tìm thấy dữ liệu thư mục!</div>;
 
   return (
-    <div style={{ padding: 12, background: "#fff", borderRadius: 8  }}>
+    <div style={{ padding: 12, background: "#fff", borderRadius: 8 }}>
       <Breadcrumb
         style={{ marginBottom: 16 }}
         items={[
@@ -174,72 +257,103 @@ export default function DetailsFolderPage() {
         ]}
       />
 
-
-     {/* --- SubFolders --- */}
-    {folderData.subFolders?.length > 0 && (
-      <div style={{ marginBottom: 24 }}>
-        <Text strong style={{ fontSize: 16 }}>Thư mục</Text>
-
-        <List
-          grid={{ gutter: 16, column: 8 }}
-          dataSource={folderData.subFolders}
-          renderItem={(folder) => (
-            <List.Item>
-              <Card
-                hoverable
-                onClick={() => handleFolderClick(folder.folderId)}
-                style={{
-                  textAlign: "center",
-                  height: 90,
-                  padding: "8px 0",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginTop: 8,
-                }}
-              >
-                {/* Hàng 1: icon + tên */}
-                <div
+      {/* --- SubFolders --- */}
+      {folderData.subFolders?.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <Text strong style={{ fontSize: 16 }}>Thư mục</Text>
+          <List
+            grid={{ gutter: 16, column: 6 }}
+            dataSource={folderData.subFolders}
+            renderItem={(folder) => (
+              <List.Item>
+                <Card
+                  hoverable
+                  onClick={() => handleFolderClick(folder.folderId)}
                   style={{
+                    textAlign: "center",
+                    height: 90,
+                    padding: "2px 0",
                     display: "flex",
-                    alignItems: "center",
+                    flexDirection: "column",
                     justifyContent: "center",
-                    gap: 6,
-                    marginBottom: 10,
-                    marginTop: 10,
+                    alignItems: "center",
+                    marginTop: 8,
+                    position: "relative",
                   }}
                 >
-                  <FolderFilled style={{ fontSize: 22, color: "#faad14" ,marginRight:4}} />
-                  <Text
-                    strong
-                    style={{
-                      fontSize: 14,
-                      wordWrap: "break-word",
-                      maxWidth: "100px",
+                  <Dropdown
+                    trigger={["click"]}
+                    menu={{
+                      items: [
+                        { key: "rename", label: "Đổi tên", icon: <EditOutlined /> },
+                        { type: "divider" },
+                        {
+                          key: "share",
+                          label: "Chia sẻ",
+                          children: [
+                            { key: "share_link", label: "Tạo liên kết chia sẻ" },
+                            { key: "share_user", label: "Chia sẻ với người dùng..." },
+                          ],
+                        },
+                        { key: "info", label: "Thông tin về thư mục", icon: <InfoCircleOutlined /> },
+                        { type: "divider" },
+                        { key: "delete", label: "Xóa", icon: <DeleteOutlined />, danger: true },
+                      ],
+                      onClick: (e) => handleMenuAction(e.key, folder, "folder"),
                     }}
                   >
-                    {folder.name || "Thư mục không tên"}
+                    <Button
+                      type="text"
+                      icon={<EllipsisOutlined />}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        color: "#555",
+                      }}
+                    />
+                  </Dropdown>
+                  {/* Hàng 1: icon + tên */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      marginBottom: 10,
+                      marginTop: 10,
+                    }}
+                  >
+                    <FolderFilled style={{ fontSize: 22, color: "#faad14", marginRight: 4 }} />
+                    <Text
+                      strong
+                      style={{
+                        fontSize: 14,
+                        wordWrap: "break-word",
+                        maxWidth: "100px",
+                      }}
+                    >
+                      {folder.name || "Thư mục không tên"}
+                    </Text>
+                  </div>
+                  {/* Hàng 2: Ngày tạo */}
+                  <Text
+                    type="secondary"
+                    style={{
+                      fontSize: 12,
+                    }}
+                  >
+                    {folder.createdAt
+                      ? new Date(folder.createdAt).toLocaleDateString("vi-VN")
+                      : "—"}
                   </Text>
-                </div>
-                {/* Hàng 2: Ngày tạo */}
-                <Text
-                  type="secondary"
-                  style={{
-                    fontSize: 12,
-                  }}
-                >
-                  {folder.createdAt
-                    ? new Date(folder.createdAt).toLocaleDateString("vi-VN")
-                    : "—"}
-                </Text>
-              </Card>
-            </List.Item>
-          )}
-        />
-      </div>
-    )}
-
+                </Card>
+              </List.Item>
+            )}
+          />
+        </div>
+      )}
 
       {/* --- Files --- */}
       {files.length > 0 && (
