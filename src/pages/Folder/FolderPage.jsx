@@ -10,10 +10,11 @@ import {
   Row,
   Col,
   Space,
+  Spin,
 } from "antd";
 import { FolderFilled, EllipsisOutlined, DeleteOutlined, EditOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { Dropdown, Button } from "antd";
-
+import { getUserId } from "../../api/api";
 import { getFolderById, getFolderTree } from "../../api/folderApi";
 
 const { DirectoryTree } = Tree;
@@ -25,6 +26,7 @@ export default function FolderPage() {
   const [treeData, setTreeData] = useState([]);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [viewMode, setViewMode] = useState("card");
+  const [loading, setLoading] = useState(false);
 
   const pathIds = path ? path.split("/") : [];
   const currentFolderId = pathIds[pathIds.length - 1] || null;
@@ -32,21 +34,26 @@ export default function FolderPage() {
   useEffect(() => {
     if (currentFolderId) loadFolder(currentFolderId);
     else loadRoot();
+    // eslint-disable-next-line
   }, [currentFolderId]);
 
   const loadRoot = async () => {
+    setLoading(true);
     try {
-      const res = await getFolderTree("5f7c51d3-a2fa-48df-a2f5-03ea647b2d22");
+      const res = await getFolderTree(getUserId());
       if (res.data.statusCode === 200) {
         setTreeData(convertToTree(res.data.data));
         setBreadcrumbs([{ id: null, name: "Tất cả tệp" }]);
       } else message.error(res.data.message);
     } catch (err) {
       message.error("Không thể tải cây thư mục!");
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadFolder = async (id) => {
+    setLoading(true);
     try {
       const res = await getFolderById(id);
       if (res.data.statusCode === 200) {
@@ -56,6 +63,8 @@ export default function FolderPage() {
       } else message.error(res.data.message);
     } catch (err) {
       message.error("Không thể tải thư mục này!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,56 +202,63 @@ export default function FolderPage() {
     );
   };
 
+  // Dummy để tránh lỗi nếu không truyền từ props hoặc định nghĩa ở nơi khác
+  const handleMenuAction = (key, folder) => {
+    // Tùy trường hợp xử lý, giữ nguyên hoặc thêm logic nếu có
+  };
+
   return (
-    <div style={{ padding: 24, background: "#fff", borderRadius: 8 }}>
-      {/* Breadcrumb */}
-      <Breadcrumb
-        style={{ marginBottom: 16 }}
-        items={breadcrumbs.map((bc, idx) => ({
-          title: bc.id ? (
-            <span
-              style={{ cursor: "pointer", color: "#1677ff" }}
-              onClick={() =>
-                navigate(
-                  bc.id
-                    ? `/folder/${pathIds.slice(0, idx).join("/")}`
-                    : "/folder"
-                )
-              }
-            >
-              {bc.name}
-            </span>
-          ) : (
-            bc.name
-          ),
-        }))}
-      />
-
-      {/* Chọn chế độ hiển thị */}
-      <div style={{ marginBottom: 16 }}>
-        <Segmented
-          options={[
-            { label: "Cây thư mục", value: "tree" },
-            { label: "Thẻ thông tin", value: "card" },
-          ]}
-          value={viewMode}
-          onChange={setViewMode}
+    <div style={{ padding: 24, background: "#fff", borderRadius: 8, minHeight: 320 }}>
+      <Spin spinning={loading}>
+        {/* Breadcrumb */}
+        <Breadcrumb
+          style={{ marginBottom: 16 }}
+          items={breadcrumbs.map((bc, idx) => ({
+            title: bc.id ? (
+              <span
+                style={{ cursor: "pointer", color: "#1677ff" }}
+                onClick={() =>
+                  navigate(
+                    bc.id
+                      ? `/folder/${pathIds.slice(0, idx).join("/")}`
+                      : "/folder"
+                  )
+                }
+              >
+                {bc.name}
+              </span>
+            ) : (
+              bc.name
+            ),
+          }))}
         />
-      </div>
 
-      {/* Hiển thị theo chế độ */}
-      {viewMode === "tree" ? (
-        <DirectoryTree
-          treeData={treeData}
-          showIcon={false}
-          defaultExpandAll
-          onSelect={handleSelect}
-          expandAction="doubleClick"
-          style={{ background: "#fff", padding: 8, borderRadius: 8 }}
-        />
-      ) : (
-        renderCardView()
-      )}
+        {/* Chọn chế độ hiển thị */}
+        <div style={{ marginBottom: 16 }}>
+          <Segmented
+            options={[
+              { label: "Cây thư mục", value: "tree" },
+              { label: "Thẻ thông tin", value: "card" },
+            ]}
+            value={viewMode}
+            onChange={setViewMode}
+          />
+        </div>
+
+        {/* Hiển thị theo chế độ */}
+        {viewMode === "tree" ? (
+          <DirectoryTree
+            treeData={treeData}
+            showIcon={false}
+            defaultExpandAll
+            onSelect={handleSelect}
+            expandAction="doubleClick"
+            style={{ background: "#fff", padding: 8, borderRadius: 8 }}
+          />
+        ) : (
+          renderCardView()
+        )}
+      </Spin>
     </div>
   );
 }

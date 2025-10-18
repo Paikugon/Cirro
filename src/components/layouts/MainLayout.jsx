@@ -39,10 +39,8 @@ const MainLayout = () => {
         {/* Nội dung chính */}
         <Content
           style={{
-            margin: "16px",
-            padding: "16px",
             background: "#f9fafb",
-            minHeight: "calc(100vh - 64px)", // trừ chiều cao Header
+            minHeight: "calc(100vh - 64px)", 
             overflowY: "auto",
           }}
         >

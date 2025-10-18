@@ -12,6 +12,7 @@ import {
   message,
   Tooltip,
   Dropdown,
+  Spin
 } from "antd";
 import {
   FolderFilled,
@@ -233,7 +234,7 @@ export default function DetailsFolderPage() {
     },
   ];
 
-  if (loading) return <div>Đang tải...</div>;
+  if (loading) return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}><Spin /></div>;
   if (!folderData) return <div>Không tìm thấy dữ liệu thư mục!</div>;
 
   return (

@@ -1,6 +1,6 @@
 import api from "./api";
 
-const FILE_API = "/file"; // vì controller là [Route("api/[controller]")]
+const FILE_API = "/file";
 
 // ✅ GET: Lấy tất cả file trong một folder
 export const getFilesByFolder = (folderId) =>

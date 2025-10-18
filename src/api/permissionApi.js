@@ -9,6 +9,9 @@ export const getAllPermissions = () => api.get(PERMISSION_API);
 export const getPermissionsByFile = (fileId) =>
   api.get(`${PERMISSION_API}/file/${fileId}`);
 
+export const getUserById = (user) =>
+  api.get(`${PERMISSION_API}/user/${user}`);
+
 // 🔹 Lấy quyền theo người dùng
 export const getPermissionsByUser = (userId) =>
   api.get(`${PERMISSION_API}/user/${userId}`);
