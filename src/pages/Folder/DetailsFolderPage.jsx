@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Breadcrumb,
@@ -12,7 +12,10 @@ import {
   message,
   Tooltip,
   Dropdown,
-  Spin
+  Spin,
+  Modal,
+  Input,
+  Form,
 } from "antd";
 import {
   FolderFilled,
@@ -23,14 +26,17 @@ import {
   EllipsisOutlined,
   EditOutlined,
   InfoCircleOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
-
 import { getFolderContent } from "../../api/folderApi";
 import {
   getFilesByFolder,
   deleteFile,
   downloadFile,
+  uploadFile,
 } from "../../api/fileApi";
+import { createPermissionByEmail } from "../../api/permissionApi";
+import { getUserId } from "../../api/api";
 
 const { Title, Text } = Typography;
 
@@ -40,6 +46,14 @@ export default function DetailsFolderPage() {
   const [folderData, setFolderData] = useState(null);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [shareItem, setShareItem] = useState(null);
+  const [shareType, setShareType] = useState(null);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
+
+  // For upload file
+  const uploadInputRef = useRef();
 
   useEffect(() => {
     const loadFolderContent = async () => {
@@ -99,6 +113,43 @@ export default function DetailsFolderPage() {
     }
   };
 
+  const handleShareByEmail = (item, type) => {
+    setShareItem(item);
+    setShareType(type);
+    setIsShareModalVisible(true);
+    setTimeout(() => {
+      form.resetFields();
+    }, 100); 
+  };
+
+  // Đảm bảo luôn post lên có trường email
+  const handleShareSubmit = async (values) => {
+    try {
+      const payload = {
+        email: values.email, 
+        fileId: shareType === "file" && shareItem && shareItem.fileId ? shareItem.fileId : null,
+        folderId: shareType === "folder" && shareItem && shareItem.folderId ? shareItem.folderId : null,
+        permissionType: "Edit",
+      };
+      console.log(payload);
+
+      const res = await createPermissionByEmail(payload);
+
+      if (res.data.statusCode === 200) {
+        messageApi.success(`Đã chia sẻ ${shareType === "file" ? "tệp" : "thư mục"} thành công với ${values.email}!`);
+        setIsShareModalVisible(false);
+        setShareItem(null);
+        setShareType(null);
+        form.resetFields();
+      } else {
+        messageApi.error(res.data.message || "Chia sẻ thất bại!");
+      }
+    } catch (error) {
+      messageApi.error("Không thể chia sẻ! Vui lòng thử lại.");
+      console.error("Lỗi khi chia sẻ:", error);
+    }
+  };
+
   const handleMenuAction = (key, item, type) => {
     if (type === "folder") {
       switch (key) {
@@ -115,8 +166,7 @@ export default function DetailsFolderPage() {
           // Thêm logic chia sẻ liên kết
           break;
         case "share_user":
-          message.info("Chia sẻ thư mục với người dùng: " + item.name);
-          // Thêm logic chia sẻ với người dùng
+          handleShareByEmail(item, "folder");
           break;
         case "info":
           message.info("Thông tin thư mục: " + item.name);
@@ -146,8 +196,7 @@ export default function DetailsFolderPage() {
           // Thêm logic chia sẻ liên kết
           break;
         case "share_user":
-          message.info("Chia sẻ tệp với người dùng: " + item.name);
-          // Thêm logic chia sẻ với người dùng
+          handleShareByEmail(item, "file");
           break;
         case "info":
           message.info("Thông tin tệp: " + item.name);
@@ -161,6 +210,74 @@ export default function DetailsFolderPage() {
       }
     }
   };
+
+  // Xử lý upload file
+  const handleUploadClick = () => {
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = null; 
+      uploadInputRef.current.click();
+    }
+  };
+
+  const handleUploadChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      message.error("Vui lòng chọn một tệp!");
+      return;
+    }
+  
+    if (!id) {
+      message.error("Không tìm thấy ID thư mục!");
+      return;
+    }
+  
+    // Kiểm tra kích thước file (giới hạn 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      message.error("Kích thước tệp vượt quá 10MB!");
+      return;
+    }
+  
+    // Kiểm tra định dạng file
+    const allowedExtensions = [".pdf", ".docx", ".jpg", ".png", ".txt"];
+    const fileExtension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+      message.error(`Chỉ hỗ trợ các định dạng: ${allowedExtensions.join(", ")}`);
+      return;
+    }
+  
+    try {
+      const ownerId = getUserId();
+      if (!ownerId) {
+        message.error("Không thể xác định người dùng!");
+        return;
+      }
+  
+      // Tạo FormData để gửi file và các trường dữ liệu
+      const formData = new FormData();
+      formData.append("file", file); // Thêm file vào form-data
+      formData.append("folderId", id); // Thêm folderId
+      formData.append("ownerId", ownerId); // Thêm ownerId
+  
+      message.loading({ content: "Đang tải lên...", key: "upload_file" });
+      const res = await uploadFile(formData); // Gửi formData thay vì payload JSON
+      if (res?.data?.statusCode === 200) {
+        message.success({ content: "Tải tệp lên thành công!", key: "upload_file" });
+        const resFiles = await getFilesByFolder(id);
+        if (resFiles.data.statusCode === 200) {
+          setFiles(resFiles.data.data || []);
+        } else {
+          message.warning(resFiles.data.message || "Không thể làm mới danh sách tệp!");
+        }
+      } else {
+        message.error({ content: res?.data?.message || "Tải tệp lên thất bại!", key: "upload_file" });
+      }
+    } catch (error) {
+      message.error({ content: error?.response?.data?.message || "Tải tệp lên thất bại!", key: "upload_file" });
+      console.error("Lỗi khi tải lên:", error);
+    }
+  };
+
 
   const columns = [
     {
@@ -234,11 +351,18 @@ export default function DetailsFolderPage() {
     },
   ];
 
-  if (loading) return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}><Spin /></div>;
-  if (!folderData) return <div>Không tìm thấy dữ liệu thư mục!</div>;
+  if (loading)
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
+        <Spin />
+      </div>
+    );
+  if (!folderData)
+    return <div>Không tìm thấy dữ liệu thư mục!</div>;
 
   return (
     <div style={{ padding: 12, background: "#fff", borderRadius: 8 }}>
+       {contextHolder} 
       <Breadcrumb
         style={{ marginBottom: 16 }}
         items={[
@@ -258,10 +382,62 @@ export default function DetailsFolderPage() {
         ]}
       />
 
+      {/* Modal chia sẻ qua email */}
+      <Modal
+        title={`Chia sẻ ${shareType === "file" ? "tệp" : "thư mục"}`}
+        open={isShareModalVisible}
+        onCancel={() => {
+          setIsShareModalVisible(false);
+          setShareItem(null);
+          setShareType(null);
+          form.resetFields();
+        }}
+        destroyOnHidden
+        footer={null}
+      >
+        <Form
+          form={form}
+          onFinish={handleShareSubmit}
+          layout="vertical"
+        >
+          <Form.Item
+            name="email"
+            label="Email người nhận"
+            rules={[
+              { required: true, message: "Vui lòng nhập email!" },
+              { type: "email", message: "Email không hợp lệ!" },
+            ]}
+          >
+            <Input placeholder="Nhập email người nhận" />
+          </Form.Item>
+          <Form.Item shouldUpdate>
+            {() => (
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  Gửi
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsShareModalVisible(false);
+                    setShareItem(null);
+                    setShareType(null);
+                    form.resetFields();
+                  }}
+                >
+                  Hủy
+                </Button>
+              </Space>
+            )}
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {/* --- SubFolders --- */}
       {folderData.subFolders?.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <Text strong style={{ fontSize: 16 }}>Thư mục</Text>
+          <Text strong style={{ fontSize: 16 }}>
+            Thư mục
+          </Text>
           <List
             grid={{ gutter: 16, column: 6 }}
             dataSource={folderData.subFolders}
@@ -315,7 +491,6 @@ export default function DetailsFolderPage() {
                       }}
                     />
                   </Dropdown>
-                  {/* Hàng 1: icon + tên */}
                   <div
                     style={{
                       display: "flex",
@@ -338,7 +513,6 @@ export default function DetailsFolderPage() {
                       {folder.name || "Thư mục không tên"}
                     </Text>
                   </div>
-                  {/* Hàng 2: Ngày tạo */}
                   <Text
                     type="secondary"
                     style={{
@@ -357,16 +531,40 @@ export default function DetailsFolderPage() {
       )}
 
       {/* --- Files --- */}
-      {files.length > 0 && (
+      {(files.length > 0 || true) && (
         <div>
-          <Text strong style={{ fontSize: 16 }}>Tệp tin</Text>
-          <Table
-            columns={columns}
-            dataSource={files}
-            rowKey="fileId"
-            pagination={false}
-            style={{ marginTop: 8 }}
-          />
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+            <Text strong style={{ fontSize: 16, flex: 1 }}>
+              Tệp tin
+            </Text>
+            <Tooltip title="Tải tệp lên">
+              <Button
+                icon={<UploadOutlined />}
+                onClick={handleUploadClick}
+                style={{ marginLeft: 8 }}
+              >
+                Tải lên
+              </Button>
+            </Tooltip>
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="*"
+              style={{ display: "none" }}
+              onChange={handleUploadChange}
+            />
+          </div>
+          {files.length > 0 ? (
+            <Table
+              columns={columns}
+              dataSource={files}
+              rowKey="fileId"
+              pagination={false}
+              style={{ marginTop: 8 }}
+            />
+          ) : (
+            <Text type="secondary">Không có tệp nào.</Text>
+          )}
         </div>
       )}
 

@@ -20,13 +20,13 @@ const CreateFolderModal = ({ open, onCancel, onCreate }) => {
       title={
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <FolderFilled style={{ fontSize: 28, color: "#69b1ff" }} />
-          <span style={{ fontSize: 18, fontWeight: 600 }}>Create folder</span>
+          <span style={{ fontSize: 18, fontWeight: 600 }}>Tạo mới folder</span>
         </div>
       }
       onCancel={onCancel}
       footer={[
         <Button key="cancel" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>,
         <Button
           key="create"
@@ -38,7 +38,7 @@ const CreateFolderModal = ({ open, onCancel, onCreate }) => {
             borderColor: folderName.trim() ? "#1677ff" : "#d9d9d9",
           }}
         >
-          Create
+          Tạo
         </Button>,
       ]}
       centered

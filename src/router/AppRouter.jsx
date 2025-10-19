@@ -9,6 +9,9 @@ import HelpPage from "../pages/HelpPage";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Auth/Login";
 import RegisterPage from "../pages/Auth/RegisterPage";
+import ForgotPassword from "../pages/Auth/ForgotPassword";
+import VerifyOtp from "../pages/Auth/VerifyOtp";
+import ResetPassword from "../pages/Auth/ResetPassword";
 
 export default function AppRouter() {
   return (
@@ -25,6 +28,9 @@ export default function AppRouter() {
         <Route path="/help" element={<HelpPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/otp" element={<VerifyOtp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
       {/* Trang không dùng layout */}

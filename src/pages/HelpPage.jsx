@@ -39,12 +39,11 @@ const HelpPage = () => {
     <Layout style={{ background: "linear-gradient(120deg, #f7f9fc 60%, #e0ecfc 100%)", minHeight: "100vh" }}>
       <Content
         style={{
-          margin: "0 auto",
-          padding: "0 12px",
           display: "flex",
           justifyContent: "center",
-          alignItems: "center",
+          alignItems: "flex-start",
           minHeight: "calc(100vh - 80px)",
+          paddingTop: 10,
         }}
       >
         <Card
@@ -53,7 +52,7 @@ const HelpPage = () => {
             borderRadius: 18,
             boxShadow:
               "0 4px 16px 1.5px rgba(80,80,160,0.11), 0 1px 4px rgba(14,46,100,0.06)",
-            padding: 30,
+            padding: 10,
             width: CARD_WIDTH,
             minWidth: CARD_WIDTH,
             maxWidth: CARD_WIDTH,

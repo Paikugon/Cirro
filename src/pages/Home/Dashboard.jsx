@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Dropdown, Menu, Tabs, Table, message, Spin, Modal } from "antd";
+import { Dropdown, Menu, Tabs, Table, message, Spin, Modal, Form, Input, Button } from "antd";
 import {
   UploadOutlined,
   PlusOutlined,
@@ -16,6 +16,7 @@ import {
 import CreateFolderModal from "../Folder/CreateFolderModal";
 import { getFilesByUser, deleteFile } from "../../api/fileApi";
 import { createFolder, getFoldersByUser, deleteFolder } from "../../api/folderApi";
+import { createPermissionByEmail } from "../../api/permissionApi";
 import { useNavigate } from "react-router-dom";
 import { getUserId } from "../../api/api";
 import { AuthContext } from "../../context/AuthContext";
@@ -30,9 +31,18 @@ const Dashboard = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [modal, contextHolder] = Modal.useModal(); // Thêm useModal cho Ant Design v5
 
-  // Nếu chưa đăng nhập hoặc đang loading auth, xử lý tương ứng
+  // --- Share state ---
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [shareItem, setShareItem] = useState(null);
+  const [shareType, setShareType] = useState(null);
+  const [form] = Form.useForm();
+  const [messageApi, contextHolderMessage] = message.useMessage();
+  const [modal] = Modal.useModal();
+
+  // --- Upload require folder modal state ---
+  const [isUploadRequireFolderModalOpen, setIsUploadRequireFolderModalOpen] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -41,7 +51,6 @@ const Dashboard = () => {
     }
   }, [navigate]);
 
-  // Load danh sách thư mục + file
   const loadData = async () => {
     try {
       const userId = getUserId();
@@ -133,7 +142,6 @@ const Dashboard = () => {
     />
   );
 
-  // Helper function để xác định icon file theo type file
   const getFileIcon = (fileName) => {
     const ext = (fileName?.split(".").pop() || "").toLowerCase();
     if (["doc", "docx", "txt", "md", "pdf", "rtf", "odt"].includes(ext))
@@ -153,11 +161,8 @@ const Dashboard = () => {
       render: (text, record) => (
         <a
           onClick={() => {
-            if (record.type === "folder") {
-              navigate(`/folder/${record.id}`);
-            } else {
-              window.open(record.url, "_blank");
-            }
+            if (record.type === "folder") navigate(`/folder/${record.id}`);
+            else window.open(record.url, "_blank");
           }}
           style={{ display: "flex", alignItems: "center", gap: 8 }}
         >
@@ -180,9 +185,9 @@ const Dashboard = () => {
             display: "inline-block",
             padding: "1px 6px",
             borderRadius: 6,
-            border: "1px solid #0670e7",  
-            backgroundColor: "#e6f0ff",     
-            color: "#0654c2",               
+            border: "1px solid #0670e7",
+            backgroundColor: "#e6f0ff",
+            color: "#0654c2",
             fontWeight: 400,
           }}
         >
@@ -200,8 +205,8 @@ const Dashboard = () => {
             <Menu
               onClick={({ key }) => handleMenuAction({ key, record })}
               items={[
-                { key: "1", label: "Chia sẻ" },
-                { key: "2", label: "Xóa" },
+                { key: "share", label: "Chia sẻ" },
+                { key: "delete", label: "Xóa" },
               ]}
             />
           }
@@ -217,10 +222,14 @@ const Dashboard = () => {
       case "folder":
         setIsFolderModalOpen(true);
         break;
-      case "1":
-        message.info(`Chia sẻ: ${record?.name || "Không xác định"}`);
+      case "share":
+        if (!record) return;
+        setShareItem(record);
+        setShareType(record.type);
+        setIsShareModalVisible(true);
+        setTimeout(() => form.resetFields(), 100);
         break;
-      case "2":
+      case "delete":
         if (!record) {
           message.error("Không xác định được mục để xóa!");
           return;
@@ -233,21 +242,17 @@ const Dashboard = () => {
           cancelText: "Hủy",
           onOk: async () => {
             try {
-              if (record.type === "folder") {
-                await deleteFolder(record.id);
-                message.success(`Xóa thư mục ${record.name} thành công!`);
-              } else {
-                await deleteFile(record.id);
-                message.success(`Xóa tệp ${record.name} thành công!`);
-              }
+              if (record.type === "folder") await deleteFolder(record.id);
+              else await deleteFile(record.id);
+              message.success(`Xóa ${record.type} ${record.name} thành công!`);
               setItems((prev) => prev.filter((item) => item.id !== record.id));
             } catch (error) {
               console.error("Lỗi khi xóa:", error);
-              if (error.response?.status === 404) {
-                message.error(`${record.name} không tồn tại!`);
-              } else {
-                message.error(`Không thể xóa ${record.name}!`);
-              }
+              const errMsg =
+                error.response?.status === 404
+                  ? `${record.name} không tồn tại!`
+                  : `Không thể xóa ${record.name}!`;
+              message.error(errMsg);
             }
           },
         });
@@ -259,19 +264,18 @@ const Dashboard = () => {
 
   const handleCreateFolder = async (data) => {
     try {
-      let userId = user?.userId || getUserId();
+      const userId = user?.userId || getUserId();
       if (!userId) {
         message.error("Không tìm thấy thông tin người dùng!");
         navigate("/login");
         return;
       }
-      console.log("gửi dữ liệu tạo folder:", { name: data.folderName, ownerId: userId });
+
       const res = await createFolder({ name: data.folderName, ownerId: userId });
 
       if (res.data.statusCode === 201) {
         message.success("Tạo thư mục thành công!");
         setIsFolderModalOpen(false);
-
         setItems((prev) => [
           {
             id: res.data.data.folderId,
@@ -291,10 +295,46 @@ const Dashboard = () => {
     }
   };
 
+  const handleShareSubmit = async (values) => {
+    try {
+      const payload = {
+        email: values.email,
+        fileId: shareType === "file" ? shareItem.id : null,
+        folderId: shareType === "folder" ? shareItem.id : null,
+        permissionType: "Edit",
+      };
+      console.log("Payload chia sẻ:", payload);
+
+      const res = await createPermissionByEmail(payload);
+
+      if (res.status >= 200 && res.status < 300) {
+        messageApi.success(
+          `Đã chia sẻ ${shareType} "${shareItem.name}" thành công với ${values.email}`
+        );
+        setIsShareModalVisible(false);
+        setShareItem(null);
+        setShareType(null);
+        form.resetFields();
+      } else {
+        messageApi.error(res.data?.message || "Chia sẻ thất bại!");
+      }
+    } catch (error) {
+      const errMsg = error.response?.data?.message || error.message || "Không thể chia sẻ! Thử lại.";
+      messageApi.error(errMsg);
+      console.error("Lỗi khi chia sẻ:", error);
+    }
+  };
+
+  // Handler chuyển tiếp sang trang thư mục
+  const handleGoToFolderPage = () => {
+    setIsUploadRequireFolderModalOpen(false);
+    navigate("/folder");
+  };
+
   return (
     <>
       <div style={{ padding: 24 }}>
-        {/* Thanh hành động */}
+        {contextHolderMessage}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           {actions.map((action) => {
             let menu = null;
@@ -302,7 +342,14 @@ const Dashboard = () => {
               case "upload":
                 menu = (
                   <Menu
-                    onClick={({ key }) => message.info(`Chọn: ${key}`)}
+                    onClick={({ key }) => {
+                      if (key === "uploadFile") {
+                        setIsUploadRequireFolderModalOpen(true);
+                      } else if (key === "uploadFolder") {
+                        // thực hiện logic tải lên thư mục thực tế, tạm thời thông báo
+                        message.info("Chức năng tải lên thư mục đang phát triển");
+                      }
+                    }}
                     items={[
                       { key: "uploadFile", label: "Tải lên tệp", icon: <UploadOutlined /> },
                       { key: "uploadFolder", label: "Tải lên thư mục", icon: <FolderAddOutlined /> },
@@ -343,12 +390,7 @@ const Dashboard = () => {
             }
 
             return (
-              <Dropdown
-                key={action.key}
-                overlay={menu}
-                trigger={["click"]}
-                placement="bottomLeft"
-              >
+              <Dropdown key={action.key} overlay={menu} trigger={["click"]} placement="bottomLeft">
                 <div
                   onClick={() => setActiveAction(action.key)}
                   style={{
@@ -398,8 +440,73 @@ const Dashboard = () => {
           onCancel={() => setIsFolderModalOpen(false)}
           onCreate={handleCreateFolder}
         />
+
+        {/* Modal: Phải tạo thư mục trước khi tải lên tệp */}
+        <Modal
+          title="Thông báo"
+          open={isUploadRequireFolderModalOpen}
+          onCancel={() => setIsUploadRequireFolderModalOpen(false)}
+          footer={[
+            <Button key="cancel" onClick={() => setIsUploadRequireFolderModalOpen(false)}>
+              Đóng
+            </Button>,
+            <Button key="folder" type="primary" onClick={handleGoToFolderPage}>
+              Chuyển sang trang thư mục
+            </Button>,
+          ]}
+          centered
+          closable
+        >
+          <div style={{ fontSize: 16, padding: "12px 0" }}>
+            Bạn cần phải tạo thư mục trước khi có thể tải lên file.<br />
+            Vui lòng tạo thư mục và thực hiện tải lên tập tin bên trong thư mục đó.
+          </div>
+        </Modal>
+
+        {/* Modal chia sẻ qua email */}
+        <Modal
+          title={`Chia sẻ ${shareType === "file" ? "tệp" : "thư mục"}`}
+          open={isShareModalVisible}
+          onCancel={() => {
+            setIsShareModalVisible(false);
+            setShareItem(null);
+            setShareType(null);
+            form.resetFields();
+          }}
+          footer={null}
+          destroyOnClose
+        >
+          <Form form={form} layout="vertical" onFinish={handleShareSubmit}>
+            <Form.Item
+              name="email"
+              label="Email người nhận"
+              rules={[
+                { required: true, message: "Vui lòng nhập email!" },
+                { type: "email", message: "Email không hợp lệ!" },
+              ]}
+            >
+              <Input placeholder="Nhập email người nhận" />
+            </Form.Item>
+            <Form.Item>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button type="primary" htmlType="submit">
+                  Gửi
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsShareModalVisible(false);
+                    setShareItem(null);
+                    setShareType(null);
+                    form.resetFields();
+                  }}
+                >
+                  Hủy
+                </Button>
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
-      {contextHolder} {/* Thêm contextHolder cho Modal */}
     </>
   );
 };

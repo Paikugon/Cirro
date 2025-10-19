@@ -19,6 +19,9 @@ export const getPermissionsByUser = (userId) =>
 // 🔹 Tạo mới quyền (hoặc cập nhật nếu đã tồn tại)
 export const createPermission = (data) => api.post(PERMISSION_API, data);
 
+export const createPermissionByEmail = (data) =>
+  api.post(`${PERMISSION_API}/share-by-email`, data);
+
 // 🔹 Cập nhật quyền
 export const updatePermission = (id, data) =>
   api.put(`${PERMISSION_API}/${id}`, data);

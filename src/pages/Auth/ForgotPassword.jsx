@@ -1,25 +1,32 @@
 import React, { useContext } from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
-import { UserOutlined, LockOutlined } from "@ant-design/icons";
+import { MailOutlined } from "@ant-design/icons";
 import { AuthContext } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
-const Login = () => {
+const ForgotPassword = () => {
   const [form] = Form.useForm();
-  const { loginUser } = useContext(AuthContext);
+  const { forgotPassword } = useContext(AuthContext);
   const [messageApi, contextHolder] = message.useMessage();
+  const navigate = useNavigate();
 
   const handleSubmit = async (values) => {
     try {
-      await loginUser(values.username, values.password);
+      await forgotPassword(values.email);
+      localStorage.setItem("resetEmail", values.email); // Lưu email vào localStorage
       messageApi.success({
-        content: "Đăng nhập thành công!",
+        content: "Mã OTP đã được gửi đến email của bạn!",
         duration: 2,
       });
+      form.resetFields();
+      setTimeout(() => {
+        navigate("/otp");
+      }, 2000);
     } catch (error) {
       messageApi.error({
-        content: error.message || "Sai tên đăng nhập hoặc mật khẩu!",
+        content: error.message || "Email không tồn tại hoặc không hợp lệ!",
         duration: 2.5,
       });
     }
@@ -46,8 +53,8 @@ const Login = () => {
         }}
       >
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <Title level={3}>Đăng nhập</Title>
-          <Text type="secondary">Nhập thông tin để đăng nhập</Text>
+          <Title level={3}>Quên Mật Khẩu</Title>
+          <Text type="secondary">Nhập email để nhận mã OTP</Text>
         </div>
 
         <Form
@@ -57,25 +64,16 @@ const Login = () => {
           requiredMark={false}
         >
           <Form.Item
-            name="username"
-            label="Tên đăng nhập"
-            rules={[{ required: true, message: "Vui lòng nhập tên đăng nhập" }]}
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: "Vui lòng nhập email" },
+              { type: "email", message: "Email không hợp lệ" },
+            ]}
           >
             <Input
-              prefix={<UserOutlined />}
-              placeholder="Nhập tên đăng nhập"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label="Mật khẩu"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Nhập mật khẩu"
+              prefix={<MailOutlined />}
+              placeholder="Nhập email của bạn"
               size="large"
             />
           </Form.Item>
@@ -88,24 +86,15 @@ const Login = () => {
               block
               style={{ borderRadius: 8 }}
             >
-              Đăng nhập
+              Gửi Mã OTP
             </Button>
           </Form.Item>
 
           <Text type="secondary">
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>
-                Chưa có tài khoản?{" "}
-                <a href="/register" style={{ color: "#1677ff" }}>
-                  Đăng ký
-                </a>
-              </span>
-              <span>
-                <a href="/forgot-password" style={{ color: "#1677ff" }}>
-                  Quên mật khẩu?
-                </a>
-              </span>
-            </div>
+            Quay lại{" "}
+            <a href="/login" style={{ color: "#1677ff" }}>
+              Đăng nhập
+            </a>
           </Text>
         </Form>
       </Card>
@@ -113,4 +102,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;
