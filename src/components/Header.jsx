@@ -1,8 +1,29 @@
-import React from "react";
-import { Input, Button, Avatar } from "antd";
+import React, { useContext } from "react";
+import { Input, Button, Avatar, Spin, message } from "antd";
 import { SearchOutlined, UserOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const { user, logout, loading } = useContext(AuthContext);
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const getUserInitial = (name) => {
+    if (!name) return "";
+    const words = name.trim().split(" ");
+    return words[words.length - 1][0]?.toUpperCase() || name[0]?.toUpperCase();
+  };
+
+  // Hàm gọi logout và show message
+  const handleLogout = () => {
+    logout();
+    messageApi.success({
+      content: "Đăng xuất thành công!",
+      duration: 2,
+    });
+  };
+
   return (
     <div
       style={{
@@ -18,41 +39,41 @@ const Header = () => {
         zIndex: 10,
       }}
     >
-      {/* Search Input */}
+      {contextHolder}
       <Input
         placeholder="Search"
         prefix={<SearchOutlined />}
-        style={{ width: 1000, borderRadius: "4px" , marginRight: "16px"}}
+        style={{ borderRadius: "4px", marginRight: "16px" }}
       />
 
-      {/* Right Section */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <Button icon={<UserOutlined />} style={{ borderRadius: "4px" }}>
-          Invite Members
-        </Button>
-
-        <Button
-          type="primary"
-          style={{
-            background: "#faad14",
-            borderColor: "#faad14",
-            borderRadius: "4px",
-          }}
-        >
-          Click to Upgrade
-        </Button>
-
-        {/* Avatar */}
-        <Avatar
-          size="default"
-          style={{
-            backgroundColor: "#87d068",
-            color: "#fff",
-            fontWeight: "bold",
-          }}
-        >
-          A
-        </Avatar>
+        {loading ? (
+          <Spin size="small" />
+        ) : !user ? (
+          <Button
+            icon={<UserOutlined />}
+            style={{ borderRadius: "4px" }}
+            type="primary"
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </Button>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Avatar
+              style={{
+                backgroundColor: "#1677ff",
+                color: "#fff",
+                fontWeight: "bold",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              {getUserInitial(user.username)}
+            </Avatar>
+            <Button onClick={handleLogout}>Logout</Button>
+          </div>
+        )}
       </div>
     </div>
   );

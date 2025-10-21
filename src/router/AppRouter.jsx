@@ -1,21 +1,40 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "../components/layouts/MainLayout";
-import HomePage from "../pages/Home/HomePage";
 import Dashboard from "../pages/Home/Dashboard";
 import FolderPage from "../pages/Folder/FolderPage";
 import DetailsFolderPage from "../pages/Folder/DetailsFolderPage";
+import UserPermissionPage from "../pages/Permission/UserPermissionPage";
+import HelpPage from "../pages/HelpPage";
+import NotFound from "../pages/NotFound";
+import Login from "../pages/Auth/Login";
+import RegisterPage from "../pages/Auth/RegisterPage";
+import ForgotPassword from "../pages/Auth/ForgotPassword";
+import VerifyOtp from "../pages/Auth/VerifyOtp";
+import ResetPassword from "../pages/Auth/ResetPassword";
 
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/home" replace />} />
+      {/* Redirect mặc định */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      {/* Các trang có layout */}
       <Route element={<MainLayout />}>
-        <Route path="/home" element={<HomePage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/folder/*" element={<FolderPage />} />
         <Route path="/folder/:id" element={<DetailsFolderPage />} />
+        <Route path="/permission/shared" element={<UserPermissionPage />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/otp" element={<VerifyOtp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
+
+      {/* Trang không dùng layout */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
